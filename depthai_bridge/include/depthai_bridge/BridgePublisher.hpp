@@ -42,6 +42,7 @@ namespace rosOrigin = ::rclcpp;
 #else
 namespace StdMsgs = std_msgs;
 namespace ImageMsgs = sensor_msgs;
+// エイリアス宣言により、ImageMsgs::ImagePtrをImagePtrとする
 using ImagePtr = ImageMsgs::ImagePtr;
 namespace rosOrigin = ::ros;
 #endif
@@ -49,6 +50,8 @@ namespace rosOrigin = ::ros;
 template <class RosMsg, class SimMsg>
 class BridgePublisher {
    public:
+    // SimMsgとRosMsgを受け取り、voidを返す関数を宣言
+    // usingというエイリアス宣言により、ConvertFuncをstd::function<void(std::shared_ptr<SimMsg>, std::deque<RosMsg>&)>とする
     using ConvertFunc = std::function<void(std::shared_ptr<SimMsg>, std::deque<RosMsg>&)>;
 
 #ifdef IS_ROS2
@@ -91,6 +94,7 @@ class BridgePublisher {
     using CustomPublisher = typename std::
         conditional<std::is_same<RosMsg, ImageMsgs::Image>::value, std::shared_ptr<image_transport::Publisher>, std::shared_ptr<rosOrigin::Publisher> >::type;
 
+    // コンストラクタ
     BridgePublisher(std::shared_ptr<dai::DataOutputQueue> daiMessageQueue,
                     rosOrigin::NodeHandle nh,
                     std::string rosTopic,
@@ -137,6 +141,7 @@ class BridgePublisher {
     void daiCallback(std::string name, std::shared_ptr<ADatatype> data);
 
     static const std::string LOG_TAG;
+    // std::shared_ptrは対象のポインタへの所有権を共有（share）するスマートポインタ
     std::shared_ptr<dai::DataOutputQueue> _daiMessageQueue;
     ConvertFunc _converter;
 
@@ -159,6 +164,8 @@ class BridgePublisher {
     bool _isImageMessage = false;  // used to enable camera info manager
 };
 
+// クラステンプレート
+// クラスの前にテンプレートを書く
 template <class RosMsg, class SimMsg>
 const std::string BridgePublisher<RosMsg, SimMsg>::LOG_TAG = "BridgePublisher";
 
@@ -365,11 +372,17 @@ void BridgePublisher<RosMsg, SimMsg>::publishHelper(std::shared_ptr<SimMsg> inDa
 #endif
 
     if(mainSubCount > 0 || infoSubCount > 0) {
-        _converter(inDataPtr, opMsgs);
+        _converter(inDataPtr, opMsgs); // inDataPtr(SimMsg)をRosMsgに変換
 
         while(opMsgs.size()) {
             RosMsg currMsg = opMsgs.front();
             if(mainSubCount > 0) {
+                // TODO: 画像処理のコードを追記する
+                // NOTE: 画像に人のバウンディングボックスと確率をOpenCVを使って表示する
+                // TODO: 画像はどこから取得するのか調べる
+                // SpatialImgDetectionsクラスで画像をもとに推論してそう
+                // NOTE: inDataPtrは、SpatialImagDetectionsとImagFrame両方の処理で登場する
+                // ImgFrameのときだけバウンディングボックスを描画するようにする
                 _rosPublisher->publish(currMsg);
             }
 
