@@ -19,7 +19,7 @@ void SpatialDetectionConverter::toRosMsg(std::shared_ptr<dai::SpatialImgDetectio
     uint64_t nsec = rosNow.toNSec() - diffTime.count();
     auto rosStamp = rosNow.fromNSec(nsec);
     opDetectionMsg.header.stamp = rosStamp;
-    opDetectionMsg.header.seq = inNetData->getSequenceNum();
+    opDetectionMsg.header.seq = inNetData->getSequenceNum(); // 画像番号を取得する
 #else
     auto rclNow = rclcpp::Clock().now();
     auto steadyTime = std::chrono::steady_clock::now();
